@@ -13,7 +13,10 @@ def main():
     jobs_index = Index()
     jobs_index = load_data_to_index(index=jobs_index)
     while True:
-        search_query = input("Enter a search query for the job you want\n")
+        search_query = input(
+            "Enter a search query for the job you want (Enter 'quite' to exit)\n")
+        if search_query == "quite":
+            break
         result_generator = jobs_index.search(search_query)
         value = next(result_generator, None)
         if not value:

@@ -5,10 +5,12 @@ Author: KHALIL HADJI
 -----
 Copyright:  KHALIL HADJI 2023
 '''
+import math
 from .data_cleaning import full_parse, remove_separator, remove_punctuation
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Literal
 from collections import Counter
+from .utils import timer
 
 
 @dataclass
@@ -48,39 +50,53 @@ class Index:
                 self.index[token] = set()
             self.index[token].add(job.id)
 
+    def _document_frequency(self, token: str):
+        return len(self.index.get(token, set()))
+
+    def _inverse_document_frequency(self, token: str):
+        return math.log2(len(self.documents)/self._document_frequency(token=token))
+
     def _results(self, parsed_query):
         return [self.index.get(token, set()) for token in parsed_query]
 
     def _rank(self, parsed_query: list[str], document_ids: list[str]):
-        ranked_results = []
+        results = []
         if not document_ids:
-            return ranked_results
+            return results
         for id in document_ids:
-            relevance_score = sum([self.documents.get(id).term_frequency(
-                term=query_term) for query_term in parsed_query])
-            ranked_results.append((id, relevance_score))
-        return sorted(ranked_results, key=lambda x: x[1], reverse=True)
+            doc_relevancy_score = 0
+            for query_term in parsed_query:
+                tf = self.documents.get(id).term_frequency(term=query_term)
+                idf = self._inverse_document_frequency(token=query_term)
+                doc_relevancy_score += tf*idf
+            results.append((id, doc_relevancy_score))
+        return sorted(results, key=lambda x: x[1], reverse=True)
 
-    def search(self, query, rank=True):
+    @timer
+    def search(self, query, rank=True, search_type: Literal["AND", "OR"] = "OR"):
         parsed_query = full_parse(text=query)
         results = self._results(parsed_query=parsed_query)
         if results:
-            hits = set.intersection(*results)
+            if search_type == "AND":
+                hits = set.intersection(*results)
+            else:
+                hits = set.union(*results)
             if rank:
                 results = self._rank(parsed_query=parsed_query,
                                      document_ids=hits)
-                for id in hits:
-                    yield f" ==> job title : {self.documents.get(id).title} \n ==> job url : {self.documents.get(id).url} \n "
+                for id, score in results:
+                    yield f" ==> job title : {self.documents.get(id).title} \n ==> job url : {self.documents.get(id).url} \n  SCORE : {score}"
             else:
                 for id in hits:
                     yield f" ==> job title : {self.documents.get(id).title} \n ==> job url : {self.documents.get(id).url} \n "
 
 
+@timer
 def load_data_to_index(index: Index, file_path: str = "job_details.csv"):
     """
     sample data adapte the data class according to the data you're using
     """
-    with open("job_details.csv", 'r') as jobs_file:
+    with open("job_data.csv", 'r') as jobs_file:
         jobs_file.readline()
         while line := jobs_file.readline():
             data_list = line.split("~")

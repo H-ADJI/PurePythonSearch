@@ -1,33 +1,22 @@
-'''
+"""
 File: main.py
 File Created: Thursday, 2nd February 2023 4:42:00 pm
 Author: KHALIL HADJI 
 -----
 Copyright:  KHALIL HADJI 2023
-'''
+"""
+from loguru import logger
 
-from search_engine.indexing import Index, load_data_to_index
+from search_engine.indexing import SearchEngine
 
 
 def main():
-    jobs_index = Index()
-    jobs_index = load_data_to_index(index=jobs_index)
-    while True:
-        search_query = input(
-            "Enter a search query for the job you want (Enter 'quite' to exit)\n")
-        if search_query == "quite":
-            break
-        result_generator = jobs_index.search(search_query)
-        value = next(result_generator, None)
-        if not value:
-            print("no search results\n")
-        while value:
-            print(value)
-            value = next(result_generator, None)
-            if not value:
-                print("\n no more results \n")
-            if input("Press enter to show next result, type 'stop' to cancel search\n") == 'stop':
-                break
+    engine = SearchEngine()
+    logger.info("Loading data Begin")
+    engine.load_data()
+    logger.info("Loading data End")
+    for result in engine.search(query="python research admin"):
+        logger.info(result)
 
 
 if __name__ == "__main__":

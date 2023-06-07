@@ -15,8 +15,13 @@ def main():
     logger.info("Loading data Begin")
     engine.load_data()
     logger.info("Loading data End")
-    for result in engine.search(query="python research admin"):
-        logger.info(result)
+    while True:
+        query = input("what is your searh query")
+        if query == "quite":
+            break
+        for result in engine.search(query=query):
+            logger.info(result)
+    logger.info(result)
 
 
 if __name__ == "__main__":

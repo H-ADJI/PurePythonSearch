@@ -40,7 +40,7 @@ engine = create_engine("sqlite:///jobs.db")
 SQLModel.metadata.create_all(engine)
 
 
-def job_generator(size: int = 20) -> Jobs:
+def job_generator(size: int = 3000) -> Jobs:
     with Session(bind=engine) as db_session:
         query = select(Jobs).limit(size)
         jobs = db_session.exec(query)
